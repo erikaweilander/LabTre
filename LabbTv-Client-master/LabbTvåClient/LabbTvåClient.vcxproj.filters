@@ -15,15 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\LabbTv-Server-master\wrapper.c">
+    <ClCompile Include="..\client.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\lab3_files\empty.c">
+    <ClCompile Include="..\wrapper.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\LabbTv-Server-master\wrapper.h">
+    <ClInclude Include="..\wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
