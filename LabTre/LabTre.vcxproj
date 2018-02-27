@@ -147,6 +147,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\Downloads\LabbTv-Server-master\wrapper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\Downloads\lab3_files\empty.c" />
+    <ClCompile Include="..\..\..\..\Downloads\LabbTv-Server-master\wrapper.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
