@@ -2,6 +2,7 @@
 #define WRAPPER_H
 
 #include<windows.h>
+
 // Wrappers for windowhandling
 
 extern HWND windowCreate(HINSTANCE hpI, HINSTANCE hI, int ncs, char *title, WNDPROC callbackFunc, int bgcolor);
