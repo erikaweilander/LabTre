@@ -80,7 +80,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdL
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		
+		if (!IsDialogMessage(AddDial, &msg))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
 	}
 
 	Sleep(100);
@@ -120,12 +124,41 @@ BOOLEAN CALLBACK mainDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM l
 			{
 				SetWindowPos(AddDial, HWND_TOP, 600, 250, 500, 250, NULL);
 				ShowWindow(AddDial, SW_SHOW);
-				return TRUE;
+				//enterPlanet(hwnd);
+				
 				break;
 			}
 			case button_load:
 			{
+				HANDLE F = OpenFileDialog("mainDial", GENERIC_READ, OPEN_EXISTING);
+				if (F == INVALID_HANDLE_VALUE)
+					MessageBox(NULL,"Could not open file","Error when opening file",0);
+				else
+				{
 				
+
+					
+						planet_type *readPlanet = malloc(sizeof(planet_type));
+						DWORD bytesRead;
+						ReadFile(F, readPlanet, sizeof(planet_type), &bytesRead, NULL);
+						/*while (f != EOF)
+						{
+							fread(&readPlanet, sizeof(planet_type), 1, f);
+							
+
+							
+						}*/
+						int i = GetCurrentProcessId();
+						char pidToString[30];
+						sprintf(pidToString, "%d", i);
+						strcpy(readPlanet->pid, pidToString);
+						
+						SendMessage(localPlanets, LB_ADDSTRING, 0, &readPlanet->name);
+						//SetDlgItemText(mainDial,box_localplanets,readPlanet->name);
+						CloseHandle(F);
+						
+					
+				}
 				break;
 			}
 			case button_save:
@@ -140,6 +173,7 @@ BOOLEAN CALLBACK mainDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM l
 
 			}
 			}
+			break;
 		case WM_CLOSE:
 		{
 			DestroyWindow(hwnd);
@@ -193,7 +227,7 @@ BOOLEAN CALLBACK addDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
 	case WM_CLOSE:
 	{
 		DestroyWindow(hwnd);
-		return TRUE;
+		return FALSE;
 		//break;
 	}
 	case WM_DESTROY:
@@ -208,7 +242,7 @@ BOOLEAN CALLBACK addDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
 
 void enterPlanet(HWND hwnd)
 {
-	planet_type *newPlanet = NULL;
+	planet_type *newPlanet = malloc(sizeof(planet_type));
 	printf(" Please enter your planets name:");
 	fgets(newPlanet->name, 20, stdin);
 	printf("\n Please enter your planets x-axis pos:");
