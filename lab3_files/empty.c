@@ -21,7 +21,7 @@ LPTSTR Slot = TEXT("\\\\.\\mailslot\\mailslot");
 //Handles to the windows and mailslot
 HWND mainDial;
 HWND AddDial;
-HANDLE mailSlot;
+HANDLE hWrite;
 
 //Dialog 2
 
@@ -84,16 +84,16 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdL
 		{
 			return -1;
 		}
-		if (!IsDialogMessage(mainDial, &msg)|| (!IsDialogMessage(AddDial, &msg)))
+		if (!IsDialogMessage(mainDial, &msg))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		/*if (!IsDialogMessage(AddDial, &msg))
+		if (!IsDialogMessage(AddDial, &msg))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-		}*/
+		}
 	}
 
 	Sleep(100);
@@ -105,7 +105,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdL
 BOOLEAN CALLBACK mainDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
 
-	
 	btnSave = GetDlgItem(mainDial, button_save);
 	btnAdd = GetDlgItem(mainDial, button_add);
 	btnToSend = GetDlgItem(mainDial, button_ToSend);
@@ -190,9 +189,9 @@ BOOLEAN CALLBACK mainDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM l
 			}
 			case button_ToSend:
 			{
-				HANDLE Slot;
-
-				Slot = mailslotConnect(mailSlot);
+				
+				DWORD bytesWritten;
+				hWrite = mailslotConnect(Slot);
 				if (Slot == INVALID_HANDLE_VALUE)
 				{
 					printf("Could not connect to mailslot");
@@ -208,7 +207,13 @@ BOOLEAN CALLBACK mainDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM l
 						addPlanetToServerListBox(current);
 						while (current != NULL)
 						{
-							mailslotWrite(Slot, current, sizeof(planet_type));
+							bytesWritten=mailslotWrite(hWrite, current, sizeof(planet_type));
+							if (bytesWritten != -1)
+								printf("data sent to server (bytes = %d)\n", bytesWritten);
+							else
+								printf("failed sending data to server\n");
+							
+
 							loadPlanetsToServerList(current);
 							removePlanetfromLocalList(current);
 							current = localList;
@@ -229,17 +234,19 @@ BOOLEAN CALLBACK mainDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM l
 			break;
 		case WM_CLOSE:
 		{
-			DestroyWindow(hwnd);
-			
-			return TRUE;
+			DestroyWindow(mainDial);
+			return FALSE;
+			//break;
 		}
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
 			return FALSE;
+			//break;
 		}
+		
 	}
-
+	//return DefWindowProc(hwnd, Message, wParam, lParam);
 	return FALSE;
 }
 
@@ -255,7 +262,7 @@ BOOLEAN CALLBACK addDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
 	pYVel = GetDlgItem(AddDial, planet_yVel);
 	btAddPlanet = GetDlgItem(AddDial, btn_planetAdd);
 	GetDlgItem(AddDial, btn_ExitAdd);
-	localPlanets = GetDlgItem(AddDial, box_localplanets);
+	//localPlanets = GetDlgItem(AddDial, box_localplanets);
 
 	switch (Message)
 	{
@@ -264,20 +271,67 @@ BOOLEAN CALLBACK addDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
 		{
 		case btn_planetAdd:
 		{
-			
-			//enterPlanet(hwnd);
-			
-			
+
+			enterPlanet(hwnd);
+			DestroyWindow(hwnd);
+
 			break;
 		}
-		
+
 		case btn_ExitAdd:
 		{
 
-			DestroyWindow(hwnd);
+			ShowWindow(AddDial, SW_HIDE);
+			break;
+		}
+
+		case planet_Name:
+		{
+			
+			break;
+		}
+
+		case planet_xpos:
+		{
+			
+			break;
+		}
+
+		case planet_ypos:
+		{
+
+			
+			break;
+		}
+
+		case planet_Life:
+		{
+			
+			break;
+
+
+		}
+		case planet_xVel:
+		{
+			
+			break;
+		}
+
+		case planet_yVel:
+		{
+		
+			break;
+		}
+
+		case planet_mass:
+		{
+			
 			break;
 		}
 		}
+
+		return TRUE;
+
 	case WM_CLOSE:
 	{
 		DestroyWindow(hwnd);
@@ -286,36 +340,48 @@ BOOLEAN CALLBACK addDialogProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
 	}
 	case WM_DESTROY:
 	{
-		PostQuitMessage(0);
-		return TRUE;
+		//PostQuitMessage(0);
+		return FALSE;
 	}
+	/*default: {
+		 DefWindowProc(hwnd, Message, wParam, lParam);
+	}*/
+	
 	}
-
 	return FALSE;
+	//return DefWindowProc(hwnd, Message, wParam, lParam);
+	//return FALSE;
 }
 
 void enterPlanet(HWND hwnd)
 {
 	planet_type *newPlanet = malloc(sizeof(planet_type));
-	printf(" Please enter your planets name:");
-	fgets(newPlanet->name, 20, stdin);
-	printf("\n Please enter your planets x-axis pos:");
-	scanf_s("%lf", &newPlanet->sx);
-	printf("\n Please enter your planets y-axis pos:");
-	scanf_s("%lf", &newPlanet->sy);
-	printf("\n Please enter your planets x-axis velocity:");
-	scanf_s("%lf", &newPlanet->vx);
-	printf("\n Please enter your planets y-axis velocity:");
-	scanf_s("%lf", &newPlanet->vy);
-	printf("\n Please enter your planets lifetime: ");
-	scanf_s("%d", &newPlanet->life);
-	printf("\n Please enter your planets mass: ");
-	scanf_s("%lf", &newPlanet->mass);
-	getchar();
+	int textLen = SendMessage(pName, WM_GETTEXTLENGTH,0,0);
+	char buffer[20];
+	if (textLen < 1) 
+	{
+		strcpy_s(buffer, sizeof(buffer), "nameless");
+		strcpy_s(newPlanet->name, sizeof(buffer),buffer);
+	}
+	else 
+	{
+		SendMessage(pName, WM_GETTEXT, 20, buffer);
+		strcpy_s(newPlanet->name, sizeof(buffer),buffer);
+	}
+	newPlanet->sx = (double)SendMessage(pXPos, WM_GETTEXT, sizeof(buffer),buffer);
+	newPlanet->sy = (double)SendMessage(pYPos, WM_GETTEXT, sizeof(buffer), buffer);
+	newPlanet->mass = (double)SendMessage(pMass, WM_GETTEXT, sizeof(buffer), buffer);
+	newPlanet->life = (double)SendMessage(pLife, WM_GETTEXT, sizeof(buffer), buffer);
+	newPlanet->vx = (double)SendMessage(pXVel, WM_GETTEXT, sizeof(buffer), buffer);
+	newPlanet->vy = (double)SendMessage(pYVel, WM_GETTEXT, sizeof(buffer), buffer);
+	newPlanet->next = NULL;
 	int i = GetCurrentProcessId();
 	char hej[30];
 	sprintf(hej, "%d", i);
 	strcpy(newPlanet->pid, hej);
+	loadPlanetsToLocalList(newPlanet);
+	SendMessage(localPlanets, LB_ADDSTRING, 0, (LPARAM)newPlanet->name);
+	free(newPlanet);
 
 }
 
@@ -335,10 +401,12 @@ void readFromServerThread(void) {
 	}
 	while (TRUE)
 	{
-		DWORD bytesRead = mailslotRead(hRead, messageFromMailbox, strlen(messageFromMailbox));
+		DWORD bytesRead = mailslotRead(hRead, messageFromMailbox, sizeof(messageFromMailbox));
 		if (bytesRead > 0)
 		{
-			printf("%s", messageFromMailbox);
+			char *msg = (char *)messageFromMailbox;
+			printf("%s", msg);
+			SendMessage(messageBoxServer, LB_ADDSTRING, 0, (LPARAM)msg);
 		}
 		Sleep(1000);
 	}
@@ -386,12 +454,13 @@ void loadPlanetsToServerList(planet_type *planet)		// SJUKT FUL KOD! BLÄ,HATA,GÅ
 }
 void addPlanetToServerListBox(planet_type *planet)
 {
+	//hämtar antalet saker i listan
 	int amount = SendMessage(localPlanets, LB_GETCOUNT, 0, 0);
 	if (amount > 0)
 	{
 		planet_type *current = localList;
 		
-		while (current != NULL)
+		while (current != NULL)		//skickar över och tar bort i lokala listan
 		{
 			SendMessage(activePlanetsBox, LB_ADDSTRING, 0, (LPARAM)current->name);
 			current = current->next;

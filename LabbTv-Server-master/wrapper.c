@@ -79,7 +79,6 @@ int mailslotWrite(HANDLE mailSlot, void *msg, int msgSize) {
    int a = WriteFile(mailSlot,msg,msgSize,&bytesWritten,NULL);
 
    if (!a) {
-		printf("SEABASS WAS HERE");
 		int err = GetLastError();
    }
 
