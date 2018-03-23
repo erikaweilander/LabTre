@@ -193,7 +193,7 @@ HANDLE OpenFileDialog(char* string, DWORD accessMode, DWORD howToCreate)
 {
 
 	OPENFILENAME opf;
-	char szFileName[_MAX_PATH] = "C:\\Users\\Linus\\Desktop\\Skola\\Ar2\\Operativsystem\\LabTre\\lab3_files\\solsystem.dat";
+	char szFileName[_MAX_PATH] = "";
 
 	opf.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT;
 	opf.lpstrDefExt = "dat";

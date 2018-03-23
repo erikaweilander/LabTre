@@ -320,13 +320,16 @@ void removePlanet(planet_type *remove)
 					temp = currentPlanet->next->next;
 					free(currentPlanet->next);
 					currentPlanet->next = temp;
+					break;
 				}
 				else
 				{
 					free(currentPlanet->next);
 					currentPlanet->next = NULL;
+					break;
 				}
 			}
+			currentPlanet = currentPlanet->next;
 		}
 	}
 	ReleaseMutex(myMutex);
@@ -339,16 +342,28 @@ planet_type* updatePlanet(planet_type *planet)
 	double gravity = 6.67259e-11;
 	int dt = UPDATE_FREQ;
 	planet_type *currentPlanet = HeadPlanet;
-	HANDLE hWrite;
+	HANDLE hWriteEvent;
+	HANDLE hWriteLife;
 	char error[] = "Nej....";
-	char outOfBounds[] = "Your planet died because it went into a black hole";
-	char deathBecauseReasons[] = "Your planet died because it DIED";
+	char message[100];
 	// SKAPAR UNIK MAILSLOT MHA PROCESSID ÄNDRAT I KLIENTEN KOLLA DÄR
-	char SlotWithPID[30];
-	sprintf(SlotWithPID, "\\\\.\\mailslot\\%s", planet->pid);
-	
-	hWrite = mailslotConnect(SlotWithPID);
+	char SlotWithPID_Event[50];
+	sprintf(SlotWithPID_Event, "\\\\.\\mailslot\\%s\\events",planet->pid);
 
+	char SlotWithPID_Life[50];
+	sprintf(SlotWithPID_Life, "\\\\.\\mailslot\\%s\\life", planet->pid);
+	typedef struct planet_info
+	{
+		char name[20];
+		int life;
+		char pid[30];
+	}planet_info;
+	
+	planet_info toSend;
+	strcpy(toSend.name, planet->name);
+	strcpy(toSend.pid, planet->pid);
+	hWriteEvent = mailslotConnect(SlotWithPID_Event);
+	hWriteLife = mailslotConnect(SlotWithPID_Life);
 	while (planet->life > 0) {
 
 		double atot_x = 0;
@@ -387,6 +402,8 @@ planet_type* updatePlanet(planet_type *planet)
 		planet->sy += ((planet->vy + atot_y) * dt);
 		*/
 		planet->life--;
+		toSend.life = planet->life;
+		mailslotWrite(hWriteLife, &toSend, sizeof(toSend));
 		ReleaseMutex(myMutex);
 		if (planet->sx >= 800 || planet->sy >= 600 || planet->life <= 0) //Om planeten går out of bounds eller om den dör
 		{
@@ -394,13 +411,13 @@ planet_type* updatePlanet(planet_type *planet)
 				planet->life = 0;
 				
 
-				if (hWrite == INVALID_HANDLE_VALUE) {
+				if (hWriteEvent == INVALID_HANDLE_VALUE) {
 					printf(error);
 					return;
 				}
 				else {
-
-					mailslotWrite(hWrite,outOfBounds , strlen(outOfBounds));
+					sprintf(message, "Your planet %s died because it went into a black hole.", planet->name);
+					mailslotWrite(hWriteEvent,&message, strlen(message));
 					printf("Sucessfully written to mailslot\n");
 				}
 
@@ -411,13 +428,13 @@ planet_type* updatePlanet(planet_type *planet)
 				
 		
 
-				if (hWrite == INVALID_HANDLE_VALUE) {
+				if (hWriteEvent == INVALID_HANDLE_VALUE) {
 					printf(error);
 					return;
 				}
 				else {
-
-					mailslotWrite(hWrite,deathBecauseReasons, strlen(deathBecauseReasons));
+					sprintf(message, "Your planet %s died because it DIED.", planet->name);
+					mailslotWrite(hWriteEvent,&message,strlen(message));
 					printf("Sucessfully written to mailslot\n");
 				}
 				removePlanet(planet);
